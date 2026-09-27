@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For You ♡</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #000;
+      color: #e9e9f1;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .screen {
+      width: min(100vw, 480px);
+      height: min(100vh, 854px);
+      aspect-ratio: 9 / 16;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Area video */
+    .video-wrap {
+      position: absolute;
+      width: 76%;
+      aspect-ratio: 16 / 9;
+      top: 29%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity .45s ease;
+      background: #080808;
+      border: 1px solid rgba(180, 190, 255, .18);
+      box-shadow: 0 0 24px rgba(100, 110, 255, .08);
+    }
+
+    .video-wrap.show {
+      opacity: .88;
+    }
+
+    .video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(1) contrast(1.15) brightness(.72);
+    }
+
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(180, 190, 255, .13) 4px
+      );
+      mix-blend-mode: screen;
+    }
+
+    /* Judul lagu */
+    .song-title {
+      position: absolute;
+      top: 6.5%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 1.3px;
+      color: #b9bacb;
+      opacity: .8;
+    }
+
+    .song-title strong {
+      display: block;
+      color: #e7e7f2;
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* Lirik titik-titik */
+    .lyrics-area {
+      position: absolute;
+      top: 42%;
+      left: 0;
+      width: 100%;
+      height: 155px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+    }
+
+    #lyrics {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Pemutar musik */
+    .player {
+      position: absolute;
+      top: 59%;
+      left: 9%;
+      width: 82%;
+      color: #c6c7d3;
+    }
+
+    .wave {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      overflow: hidden;
+      opacity: .72;
+    }
+
+    .wave span {
+      display: block;
+      width: 2px;
+      height: var(--h);
+      min-height: 2px;
+      background: #bfc1d3;
+      border-radius: 2px;
+      transform-origin: center;
+      animation: wave 850ms ease-in-out infinite alternate;
+      animation-delay: var(--delay);
+    }
+
+    .wave.paused span {
+      animation-play-state: paused;
+      transform: scaleY(.35);
+    }
+
+    @keyframes wave {
+      from { transform: scaleY(.35); }
+      to { transform: scaleY(1); }
+    }
+
+    .progress-line {
+      width: 100%;
+      height: 2px;
+      margin-top: 7px;
+      background: #555866;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: #e2e4f2;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: "";
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #e2e4f2;
+      right: -3px;
+      top: -2px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 22px;
+      margin-top: 12px;
+    }
+
+    .controls button {
+      color: #c9cad6;
+      background: transparent;
+      border: 0;
+      font-size: 13px;
+      cursor: pointer;
+      min-width: 18px;
+    }
+
+    .controls button.play {
+      font-size: 17px;
+      color: #f0f0fa;
+    }
+
+    .time {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 9px;
+      color: #777987;
+      letter-spacing: .3px;
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 1.5%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: #555665;
+      font-size: 8px;
+      letter-spacing: 1px;
+    }
+
+    @media (max-height: 600px) {
+      .screen {
+        height: 100vh;
+        width: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="screen">
+    <div class="song-title">
+      <strong>Drop Dead</strong>
+      Olivia Rodrigo
+    </div>
+
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" muted loop playsinline>
+        <source src="video-crush.mp4" type="video/mp4">
+      </video>
+      <div class="scanlines"></div>
+    </div>
+
+    <div class="lyrics-area">
+      <canvas id="lyrics"></canvas>
+    </div>
+
+    <div class="player">
+      <div class="wave paused" id="wave"></div>
+
+      <div class="progress-line" id="progressLine">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="controls">
+        <button id="restart" aria-label="Ulangi">↶</button>
+        <button id="play" class="play" aria-label="Putar">▶</button>
+        <button id="next" aria-label="Lewati">↠</button>
+      </div>
+
+      <div class="time">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="hint">MADE WITH LOVE ♡</div>
+
+    <audio id="audio" preload="auto">
+      <source src="drop-dead.mp3" type="audio/mpeg">
+    </audio>
+  </main>
+
+  <script>
+    const audio = document.getElementById("audio");
+    const video = document.getElementById("video");
+    const videoWrap = document.getElementById("videoWrap");
+    const playButton = document.getElementById("play");
+    const wave = document.getElementById("wave");
+    const progressFill = document.getElementById("progressFill");
+    const progressLine = document.getElementById("progressLine");
+    const currentTimeEl = document.getElementById("currentTime");
+    const durationEl = document.getElementById("duration");
+
+    /*
+      GANTI angka ini jika bagian instrumental
+      sebelum lirik pertama lebih panjang atau pendek.
+      Contoh: 5 berarti lirik mulai setelah 5 detik.
+    */
+    const INTRO_SECONDS = 5;
+
+    /*
+      Lirik yang kamu berikan.
+      Baris akan muncul bergantian selama audio berjalan.
+    */
+    /*
+      WAKTU LIRIK (detik): ubah angka start untuk mengatur kapan
+      setiap baris muncul. Contoh: start: 12 berarti muncul di 0:12.
+      Angka harus berurutan dari kecil ke besar.
+    */
+    const lyrics = [
+      { time: 8, text: "One Night" },
+      { time: 9, text: "I Was Bored" },
+      { time: 11, text: "In Bed" },
+      { time: 12, text: "And Stalked You" },
+      { time: 13, text: "On The Internet" },
+      { time: 15, text: "It's Feminine" },
+      { time: 18, text: "Intuition" },
+      { time: 19, text: "'Cuz I Always" },
+      { time: 20, text: "Had A Vision" },
+      { time: 21, text: "Of Us Standing" },
+      { time: 22, text: "Like This" },
+      { time: 23, text: "All Pressed Up" },
+      { time: 24, text: "In The Bathroom Line" },
+      { time: 27, text: "You're Looking Like" },
+      { time: 28, text: "An Angel" },
+      { time: 29, text: "On The Walls" },
+      { time: 30, text: "Of Versailles" },
+      { time: 31, text: "The Most Alive" },
+      { time: 32, text: "I've Ever Been" },
+      { time: 34, text: "But Kiss Me" },
+      { time: 35, text: "And I Might" },
+      { time: 88, text: "That I'd Love It" },
+      { time: 92, text: "If You Held My Hand" },
+      { time: 96, text: "Goddamn" },
+      { time: 100, text: "And Then Maybe" },
+      { time: 104, text: "We Could Make-Makeout" },
+      { time: 108, text: "Clothes Off" },
+      { time: 112, text: "And Fall To The Ground" },
+      { time: 116, text: "Let's Go Steady" },
+      { time: 120, text: "Let's Go Out" },
+      { time: 124, text: "And Tell The Whole" },
+      { time: 128, text: "Damn World How" }
+    ];
+
+    /*
+      Baris yang menampilkan video.
+      Kamu bisa ubah angka atau menambah/menghapusnya.
+    */
+    const videoMoments = new Set([
+      3, 4, 8, 9, 11, 12, 14, 15, 16,
+      18, 19, 21, 22, 24, 25, 26, 27, 29
+    ]);
+
+    const canvas = document.getElementById("lyrics");
+    const ctx = canvas.getContext("2d");
+
+    let currentLyric = -1;
+    let lastLyric = -2;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawLyric();
+    }
+
+    function drawLyric() {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      if (currentLyric < 0 || currentLyric >= lyrics.length) return;
+
+      const text = lyrics[currentLyric].text.toUpperCase();
+      const off = document.createElement("canvas");
+      const offCtx = off.getContext("2d");
+
+      let fontSize = Math.min(43, w * 0.105);
+      off.width = Math.floor(w * 2);
+      off.height = Math.floor(h * 2);
+
+      offCtx.fillStyle = "#fff";
+      offCtx.textAlign = "center";
+      offCtx.textBaseline = "middle";
+
+      while (fontSize > 13) {
+        offCtx.font = `500 ${fontSize * 2}px Arial`;
+        if (offCtx.measureText(text).width < off.width * .92) break;
+        fontSize -= 1;
+      }
+
+      offCtx.font = `500 ${fontSize * 2}px Arial`;
+      offCtx.fillText(text, off.width / 2, off.height / 2);
+
+      const pixels = offCtx.getImageData(0, 0, off.width, off.height).data;
+      const step = 8;
+      const points = [];
+
+      for (let y = 0; y < off.height; y += step) {
+        for (let x = 0; x < off.width; x += step) {
+          const alpha = pixels[(y * off.width + x) * 4 + 3];
+          if (alpha > 100) points.push([x, y]);
+        }
+      }
+
+      const scale = .5;
+      const dotSize = 1.15;
+
+      ctx.fillStyle = "#d9dce9";
+      for (const [x, y] of points) {
+        ctx.beginPath();
+        ctx.arc(
+          (x - off.width / 2) * scale + w / 2,
+          (y - off.height / 2) * scale + h / 2,
+          dotSize,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+
+    function getLyricIndex() {
+      if (!Number.isFinite(audio.duration) || audio.duration <= 0) return -1;
+      if (audio.currentTime < lyrics[0].time) return -1;
+
+      // Cari baris terakhir yang waktu mulainya sudah tercapai.
+      for (let i = lyrics.length - 1; i >= 0; i--) {
+        if (audio.currentTime >= lyrics[i].time) return i;
+      }
+      return -1;
+    }
+
+    function updateLyrics() {
+      currentLyric = getLyricIndex();
+
+      if (currentLyric !== lastLyric) {
+        lastLyric = currentLyric;
+        drawLyric();
+
+        if (videoMoments.has(currentLyric)) {
+          videoWrap.classList.add("show");
+          video.play().catch(() => {});
+        } else {
+          videoWrap.classList.remove("show");
+        }
+      }
+    }
+
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds)) return "0:00";
+      const min = Math.floor(seconds / 60);
+      const sec = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${min}:${sec}`;
+    }
+
+    function updatePlayer() {
+      const duration = audio.duration || 0;
+      const current = audio.currentTime || 0;
+      const percent = duration ? (current / duration) * 100 : 0;
+
+      progressFill.style.width = `${percent}%`;
+      currentTimeEl.textContent = formatTime(current);
+      durationEl.textContent = formatTime(duration);
+      updateLyrics();
+    }
+
+    function playAudio() {
+      audio.play().then(() => {
+        playButton.textContent = "Ⅱ";
+        wave.classList.remove("paused");
+      }).catch(() => {
+        playButton.textContent = "▶";
+      });
+    }
+
+    function pauseAudio() {
+      audio.pause();
+      video.pause();
+      playButton.textContent = "▶";
+      wave.classList.add("paused");
+    }
+
+    playButton.addEventListener("click", () => {
+      if (audio.paused) playAudio();
+      else pauseAudio();
+    });
+
+    document.getElementById("restart").addEventListener("click", () => {
+      audio.currentTime = 0;
+      currentLyric = -1;
+      lastLyric = -2;
+      videoWrap.classList.remove("show");
+      updatePlayer();
+      playAudio();
+    });
+
+    document.getElementById("next").addEventListener("click", () => {
+      if (!Number.isFinite(audio.duration)) return;
+      const nextIndex = Math.min(lyrics.length - 1, currentLyric + 1);
+      audio.currentTime = lyrics[nextIndex].time;
+      updatePlayer();
+    });
+
+    progressLine.addEventListener("click", (event) => {
+      if (!Number.isFinite(audio.duration)) return;
+      const rect = progressLine.getBoundingClientRect();
+      const percent = (event.clientX - rect.left) / rect.width;
+      audio.currentTime = Math.max(0, Math.min(1, percent)) * audio.duration;
+      updatePlayer();
+    });
+
+    audio.addEventListener("timeupdate", updatePlayer);
+    audio.addEventListener("loadedmetadata", updatePlayer);
+    audio.addEventListener("play", () => {
+      playButton.textContent = "Ⅱ";
+      wave.classList.remove("paused");
+    });
+    audio.addEventListener("pause", () => {
+      playButton.textContent = "▶";
+      wave.classList.add("paused");
+    });
+    audio.addEventListener("ended", () => {
+      playButton.textContent = "▶";
+      wave.classList.add("paused");
+      video.pause();
+    });
+
+    // Membuat visualizer audio dekoratif
+    const waveCount = 115;
+    for (let i = 0; i < waveCount; i++) {
+      const bar = document.createElement("span");
+      const height = 3 + Math.abs(Math.sin(i * .42) * Math.cos(i * .13)) * 20;
+      bar.style.setProperty("--h", `${height}px`);
+      bar.style.setProperty("--delay", `${(i % 13) * -0.08}s`);
+      wave.appendChild(bar);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
